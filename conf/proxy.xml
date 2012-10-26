@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<proxies>
+	<proxy>
+		<host></host>
+		<port></port>
+	</proxy>
+	<proxy>
+		<host></host>
+		<port></port>
+		<auth user="" pwd=""/>
+	</proxy>
+</proxies>

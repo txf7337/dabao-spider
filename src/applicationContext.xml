@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+	<bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>file:./conf/spider.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- DB -->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${jdbc.agent.driver}">
+		</property>
+		<property name="url" value="${jdbc.agent.url}">
+		</property>
+		<property name="username" value="${jdbc.agent.username}"></property>
+		<property name="password" value="${jdbc.agent.password}"></property>
+	</bean>
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<bean id="baseColumn" class="com.dabao.spider.bean.BaseColumn"></bean>
+
+	<!-- Parser -->
+	<bean id="jsoupParser" class="com.dabao.spider.parser.JSOUPParser"></bean>
+	<bean id="regularParser" class="com.dabao.spider.parser.RegularParser"></bean>
+	<bean id="xpathParser" class="com.dabao.spider.parser.XPATHParser"></bean>
+	
+	<!-- Queue -->
+	<bean id="proxyQueue" class="com.dabao.spider.queue.ProxyQueue"
+		init-method="init"></bean>
+	<bean id="infoQueue" class="com.dabao.spider.queue.InfoQueue"
+		init-method="init" scope="prototype"></bean>
+	<bean id="fileQueue" class="com.dabao.spider.queue.FileQueue"
+		init-method="init"></bean>
+	<bean id="ocrQueue" class="com.dabao.spider.queue.OCRQueue"
+		init-method="init">
+	</bean>
+
+	<!-- Dao -->
+	<bean id="infoDao" class="com.dabao.spider.dao.InfoDao">
+		<property name="jdbcTemplate" ref="jdbcTemplate" />
+	</bean>
+
+	<!-- Service -->
+	<bean id="spiderService" class="com.dabao.spider.service.SpiderService">
+		<property name="infoDao" ref="infoDao" />
+		<property name="baseColumn" ref="baseColumn" />
+	</bean>
+	<bean id="fileService" class="com.dabao.spider.service.SpiderFileService">
+		<property name="infoDao" ref="infoDao" />
+	</bean>
+	<bean id="ocrService" class="com.dabao.spider.service.SpiderOcrService">
+		<property name="infoDao" ref="infoDao" />
+	</bean>
+	
+	<!-- Thread Pool -->
+	<bean id="taskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor"
+		scope="prototype">
+		<property name="corePoolSize" value="30" />
+		<property name="maxPoolSize" value="100" />
+	</bean>
+	<bean id="spiderPool" class="com.dabao.spider.current.SpiderThreadPool"
+		scope="prototype">
+		<property name="columnSpider" ref="columnSpider" />
+		<property name="proxyQueue" ref="proxyQueue" />
+	</bean>
+	<bean id="fileSpiderPool" class="com.dabao.spider.current.FileSpiderThreadPool">
+		<property name="fileQueue" ref="fileQueue" />
+		<property name="proxyQueue" ref="proxyQueue" />
+		<property name="fileSpider" ref="fileSpider" />
+		<property name="cycle" value="${spider.cycle}" />
+		<property name="poolSize" value="${spider.poolsize}" />
+		<property name="useProxy" value="${spider.useProxy}" />
+	</bean>
+	<bean id="ocrPool" class="com.dabao.spider.current.OCRThreadPool">
+		<property name="ocrQueue" ref="ocrQueue" />
+		<property name="proxyQueue" ref="proxyQueue" />
+		<property name="ocrSpider" ref="ocrSpider" />
+		<property name="cycle" value="${spider.cycle}" />
+		<property name="poolSize" value="${spider.poolsize}" />
+		<property name="useProxy" value="${spider.useProxy}" />
+	</bean>
+	
+	<!-- Spider -->
+	<bean id="infoSpider" class="com.dabao.spider.InfoSpider" scope="prototype">
+		<property name="pool" ref="spiderPool" />
+		<property name="queue" ref="infoQueue" />
+		<property name="xpathParser" ref="xpathParser" />
+		<property name="seedSpider" ref="seedSpider" />
+		<property name="spiderService" ref="spiderService" />
+	</bean>
+	<bean id="seedSpider" class="com.dabao.spider.SeedSpider" scope="prototype">
+		<property name="proxyQueue" ref="proxyQueue" />
+		<property name="queue" ref="infoQueue" />
+		<property name="parser" ref="jsoupParser" />
+	</bean>
+	<bean id="columnSpider" class="com.dabao.spider.ColumnSpider"
+		scope="prototype">
+		<property name="spiderService" ref="spiderService" />
+		<property name="fileQueue" ref="fileQueue" />
+		<property name="ocrQueue" ref="ocrQueue" />
+		<property name="JParser" ref="jsoupParser" />
+		<property name="RParser" ref="regularParser" />
+		<property name="XParser" ref="xpathParser" />
+	</bean>
+	<bean id="fileSpider" class="com.dabao.spider.FileSpider">
+		<property name="sfService" ref="fileService" />
+		<property name="basepath" value="${basepath}" />
+	</bean>
+	<bean id="ocrSpider" class="com.dabao.spider.OCRSpider">
+		<property name="soService" ref="ocrService" />
+		<property name="ocrData" value="${ocr.data}" />
+	</bean>
+	
+	<!-- Bean -->
+
+	<!-- Quartz -->
+	<bean id="spiderJob" class="com.dabao.spider.job.SpiderJob">
+		<property name="taskExecutor" ref="taskExecutor" />
+	</bean>
+	<bean id="spiderTask"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="spiderJob" />
+		<property name="targetMethod" value="work" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="spiderTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="spiderTask" />
+		<property name="cronExpression" value="${spider.job.cron}" />
+	</bean>
+	<bean id="ocrJob" class="com.dabao.spider.job.OCRJob">
+		<property name="pool" ref="ocrPool"></property>
+	</bean>
+	<bean id="ocrTask"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="ocrJob" />
+		<property name="targetMethod" value="work" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="ocrTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="ocrTask" />
+		<property name="cronExpression" value="0 0 0 * * ?" />
+	</bean>
+	<bean id="proxyJob" class="com.dabao.spider.job.ProxyJob">
+		<property name="queue" ref="proxyQueue"></property>
+	</bean>
+	<bean id="proxyTask"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="proxyJob" />
+		<property name="targetMethod" value="work" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="proxyTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="proxyTask" />
+		<property name="cronExpression" value="${spider.proxy_job.cron}" />
+	</bean>
+	<bean id="fileSpiderJob" class="com.dabao.spider.job.FileSpiderJob">
+		<property name="pool" ref="fileSpiderPool" />
+	</bean>
+	<bean id="fileSpiderTask"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="fileSpiderJob" />
+		<property name="targetMethod" value="work" />
+		<property name="concurrent" value="false" />
+	</bean>
+	<bean id="fileSpiderTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="fileSpiderTask" />
+		<property name="cronExpression" value="0 0 0 * * ?" />
+	</bean>
+	<bean id="schdulerFactory"
+		class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="spiderTrigger" />
+				<ref bean="proxyTrigger" />
+				<ref bean="fileSpiderTrigger" />
+				<ref bean="ocrTrigger" />
+			</list>
+		</property>
+	</bean>
+	
+    <!-- AOP -->
+	<bean id="txManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<tx:annotation-driven transaction-manager="txManager"
+		proxy-target-class="true" />
+</beans>

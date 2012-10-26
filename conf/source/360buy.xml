@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<source>
+	<base cycle="1000" threads="1" is-proxy="false"></base>
+	<seeds>
+		<seed url="http://www.360buy.com/products/652-829-845-0-0-0-0-0-0-0-1-1-*.html" from="1" to="9"
+			query="ul.list-h>li>div.p-name>a" attr="href">
+		</seed>
+	</seeds>
+	<columns>
+		<column name="id" type="INT(11)">
+			<rule type="html" value="ul#summary>li#summary-market>div.dd>span" index="0" />
+		</column>
+		<column name="title" type="VARCHAR(100)">
+			<rule type="html" value="div#product-intro>div#name>h1" index="0" />
+		</column>
+		<column name="price" type="VARCHAR(100)" ocr_column="price_ocr_url">
+			<rule type="html" value="ul#summary>li#summary-price>div.dd>strong>img" index="0" attr="src"/>
+		</column>
+	</columns>
+</source>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<source>
+	<base cycle="1000" threads="1" is-proxy="false"></base>
+	<seeds>
+		<seed url="http://www.okbuy.com/product/filter?category=54&#38;per_page=*00" from="1" to="1"
+			query="li.pc_list_hover>div.img>a" attr="href">
+			<columns>
+				<column name="style" value="运动鞋" type="VARCHAR(100)" />
+			</columns>
+		</seed>
+	</seeds>
+	<columns>
+		<column name="id" type="INT(11)">
+			<rule type="html" value="ul.pProductTitle>li>p" index="0" />
+		</column>
+		<column name="arno" type="VARCHAR(100)">
+			<rule type="html" value="ul.pProdInfoUL>li>span" index="0" />
+		</column>
+		<column name="material" type="VARCHAR(100)">
+			<rule type="html" value="ul.pProdInfoUL>li>span" index="2" />
+		</column>
+		<column name="brand" type="VARCHAR(100)">
+			<rule type="html" value="span.pBrand" index="0" />
+		</column>
+		<column name="price" type="DOUBLE">
+			<rule type="json" url="http://www.okbuy.com/product/ajax_product_info/{id}" value="/o/salepr" index="0" />
+		</column>
+		<column name="img_1" type="VARCHAR(1000)" file_column="img_1_url"
+			file_path="{yyyy}/{MM}/" >
+			<rule type="html" value="table.multi_view>tbody>tr>td>a" index="0" attr="href"/>
+		</column>
+		<column name="img_2" type="VARCHAR(1000)" file_column="img_2_url"
+			file_path="{yyyy}/{MM}/" >
+			<rule type="html" value="table.multi_view>tbody>tr>td>a" index="1" attr="href"/>
+		</column>
+		<column name="img_3" type="VARCHAR(1000)" file_column="img_3_url"
+			file_path="{yyyy}/{MM}/" >
+			<rule type="html" value="table.multi_view>tbody>tr>td>a" index="2" attr="href"/>
+		</column>
+		<column name="img_4" type="VARCHAR(1000)" file_column="img_4_url"
+			file_path="{yyyy}/{MM}/" >
+			<rule type="html" value="table.multi_view>tbody>tr>td>a" index="3" attr="href"/>
+		</column>
+		<!-- 
+		<column name="shelf_time" type="DATE">
+			<rule type="json" url="" value="" />
+		</column>
+		<column name="brand" type="VARCHAR(100)">
+			<rule type="text" url="" value="" />
+		</column>
+		<column name="test" type="VARCHAR(100)">
+			<rule type="text" url="" value="" />
+		</column>
+		<column name="img_2" type="VARCHAR(1000)" file_column="img_2_url"
+			file_path="%yyyy/%MM" >
+			<rule type="html" value="" index="1" attr=""/>
+		</column>
+		<column name="img_3" type="VARCHAR(1000)" file_column="img_3_url"
+			file_path="%yyyy/%MM" >
+			<rule type="html" value="" index="2" attr=""/>
+		</column>
+		<column name="img_4" type="VARCHAR(1000)" file_column="img_4_url"
+			file_path="%yyyy/%MM" >
+			<rule type="html" value="" index="3" attr=""/>
+		</column>
+		 -->
+	</columns>
+</source>
